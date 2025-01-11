@@ -10,19 +10,14 @@ const supabase = createClient(
 
 const HARDCODED_USER_ID = '17da05b6-236d-44df-8624-50c2eda0bdac';
 
-// Function to generate consistent random value for a specific date
 const generateRandomValueForDate = (dateStr) => {
-  // Create a simple hash of the date string
   let hash = 0;
   for (let i = 0; i < dateStr.length; i++) {
     hash = ((hash << 5) - hash) + dateStr.charCodeAt(i);
     hash = hash & hash;
   }
   
-  // Generate a value between 20 and 45 kWh
   const baseValue = 20 + Math.abs(hash % 25);
-  
-  // Add a slight upward trend (0.1 kWh per day)
   const daysFromStart = Math.floor((new Date(dateStr) - new Date('2024-01-01')) / (1000 * 60 * 60 * 24));
   return baseValue + (daysFromStart * 0.1);
 };
@@ -54,6 +49,9 @@ const DashboardLayout = () => {
         start: parseISO(dateRange.startDate),
         end: parseISO(dateRange.endDate)
       });
+
+      // Sort dates in ascending order (earliest to latest)
+      dates.sort((a, b) => a - b);
 
       // Generate power data for each date
       const powerReadings = dates.map(date => {
@@ -96,6 +94,37 @@ const DashboardLayout = () => {
   useEffect(() => {
     generatePowerData();
   }, [dateRange]);
+
+  const renderPowerContent = () => (
+    <div className="content">
+      <h2>Power Consumption Statistics</h2>
+      <div className="date-range">
+        <input
+          type="date"
+          value={dateRange.startDate}
+          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+          className="date-input"
+        />
+        <input
+          type="date"
+          value={dateRange.endDate}
+          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+          className="date-input"
+        />
+      </div>
+      <div className="chart-container">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={powerStats.timeSeriesData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="power" stroke="#00ff9d" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
 
   const renderDashboardContent = () => (
     <div className="dashboard-content">
@@ -199,36 +228,6 @@ const DashboardLayout = () => {
       </div>
     </div>
   );
-  const renderPowerContent = () => (
-    <div className="content">
-      <h2>Power Consumption Statistics</h2>
-      <div className="date-range">
-        <input
-          type="date"
-          value={dateRange.startDate}
-          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-          className="date-input"
-        />
-        <input
-          type="date"
-          value={dateRange.endDate}
-          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-          className="date-input"
-        />
-      </div>
-      <div className="chart-container">
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={powerStats.timeSeriesData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="power" stroke="#00ff9d" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
 
   const renderCostContent = () => (
     <div className="content">
@@ -261,7 +260,6 @@ const DashboardLayout = () => {
     </div>
   );
 
-  // Rest of the component remains the same...
   const renderContent = () => {
     switch(activeMenu) {
       case 'dashboard':
