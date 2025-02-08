@@ -36,7 +36,7 @@ const LoginForm = () => {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password
-        }),
+        })
       });
   
       const data = await response.json();
